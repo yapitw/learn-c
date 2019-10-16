@@ -7,8 +7,7 @@ int main() {
   printf("Please enter the second integer: ");
   scanf("%d", &integer2);
 
-  int temp;
-  temp = integer1;
+  int temp = integer1;
   integer1 = integer2;
   integer2 = temp;
 
