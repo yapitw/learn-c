@@ -5,7 +5,6 @@ int main() {
   char op;
   float answer;
 
-  printf("%d", '+');
   scanf("%d%c%d", &num1, &op, &num2);
 
   if (op == '+') {
