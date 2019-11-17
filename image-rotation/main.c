@@ -71,7 +71,7 @@ int main() {
   }
 
   fwrite(out_buffer, sizeof(unsigned char), imgSize, fOut);
-  printf("SUCCESS");
+  printf("SUCCESS!\n");
 
   fclose(fIn);
   fclose(fOut);
