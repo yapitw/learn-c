@@ -17,6 +17,10 @@ void imageWriter(const char *imgName, unsigned char *header,
 void ImgHistogram(unsigned char *_imgData, int imgRows, int imgCols,
                   float hist[]);
 
+void ImgHistogramEqualization(unsigned char *_inputImgData,
+                              unsigned char *_outputImgData, int imgRows,
+                              int imgCols);
+
 int main() {
   int imgWidth, imgHeight, imgBitDepth;
   unsigned char imgHeader[BMP_HEADER_SIZE];
@@ -25,11 +29,15 @@ int main() {
   unsigned char imgBuffer2[CUSTOM_IMG_SIZE];
 
   const char imgName[] = "lena512.bmp";
+  const char newImgName[] = "lena_eqz.bmp";
 
   imageReader(imgName, &imgHeight, &imgWidth, &imgBitDepth, &imgHeader[0],
               &imgColorTable[0], &imgBuffer[0]);
 
-  ImgHistogram(&imgBuffer[0], imgHeight, imgWidth, &IMG_HIST[0]);
+  // ImgHistogram(&imgBuffer[0], imgHeight, imgWidth, &IMG_HIST[0]);
+  ImgHistogramEqualization(&imgBuffer[0], &imgBuffer2[0], imgHeight, imgWidth);
+
+  imageWriter(newImgName, imgHeader, imgColorTable, imgBuffer2, imgBitDepth);
 
   return 0;
 }
@@ -108,4 +116,30 @@ void ImgHistogram(unsigned char *_imgData, int imgRows, int imgCols,
     fprintf(fptr, "\n%f", hist[i]);
   }
   fclose(fptr);
+}
+
+void ImgHistogramEqualization(unsigned char *_inputImgData,
+                              unsigned char *_outputImgData, int imgRows,
+                              int imgCols) {
+  int x, y, i, j;
+  int histeq[256];
+  float hist[256];
+  float sum;
+
+  ImgHistogram(&_inputImgData[0], imgRows, imgCols, &hist[0]);
+
+  for (i = 0; i < 255; i++) {
+    sum = 0.0;
+    for (j = 0; j <= i; j++) {
+      sum = sum + hist[j];
+    }
+    histeq[i] = (int)(255 * sum + 0.5);
+  }
+
+  for (y = 0; y < imgRows; y++) {
+    for (x = 0; x < imgCols; x++) {
+      *(_outputImgData + x + y * imgCols) =
+          histeq[*(_inputImgData + x + y * imgCols)];
+    }
+  }
 }

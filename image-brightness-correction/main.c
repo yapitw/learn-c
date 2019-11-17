@@ -5,8 +5,6 @@
 #define BMP_COLOR_TABLE_SIZE 1024
 #define CUSTOM_IMG_SIZE 512 * 512
 
-float IMG_HIST[255];
-
 void imageReader(const char *imgName, int *_height, int *_width, int *_bitDepth,
                  unsigned char *_header, unsigned char *_colorTable,
                  unsigned char *_buf);
@@ -14,22 +12,29 @@ void imageReader(const char *imgName, int *_height, int *_width, int *_bitDepth,
 void imageWriter(const char *imgName, unsigned char *header,
                  unsigned char *colorTable, unsigned char *buf, int bitDepth);
 
-void ImgHistogram(unsigned char *_imgData, int imgRows, int imgCols,
-                  float hist[]);
+void correctBrightness(unsigned char *_inputImgData,
+                       unsigned char *_outputImgData, int imgRows, int imgCols,
+                       int brightness);
 
 int main() {
+
   int imgWidth, imgHeight, imgBitDepth;
   unsigned char imgHeader[BMP_HEADER_SIZE];
   unsigned char imgColorTable[BMP_COLOR_TABLE_SIZE];
   unsigned char imgBuffer[CUSTOM_IMG_SIZE];
   unsigned char imgBuffer2[CUSTOM_IMG_SIZE];
 
-  const char imgName[] = "lena512.bmp";
+  const char imgName[] = "girlface.bmp";
+  const char newImgName[] = "girlface_bright.bmp";
 
   imageReader(imgName, &imgHeight, &imgWidth, &imgBitDepth, &imgHeader[0],
               &imgColorTable[0], &imgBuffer[0]);
 
-  ImgHistogram(&imgBuffer[0], imgHeight, imgWidth, &IMG_HIST[0]);
+  correctBrightness(&imgBuffer[0], &imgBuffer2[0], imgHeight, imgWidth, 100);
+
+  imageWriter(newImgName, imgHeader, imgColorTable, imgBuffer2, imgBitDepth);
+
+  printf("SUCCESS !\n");
 
   return 0;
 }
@@ -70,7 +75,8 @@ void imageWriter(              //
     unsigned char *header,     //
     unsigned char *colorTable, //
     unsigned char *buf,        //
-    int bitDepth) {
+    int bitDepth               //
+) {
   FILE *fo = fopen(imgName, "wb");
   fwrite(header, sizeof(unsigned char), 54, fo);
   if (bitDepth <= 8) {
@@ -80,32 +86,20 @@ void imageWriter(              //
   fclose(fo);
 }
 
-void ImgHistogram(unsigned char *_imgData, int imgRows, int imgCols,
-                  float hist[]) {
-  FILE *fptr;
-  fptr = fopen("image_hist.txt", "w");
-  int x, y, i, j;
-  long int ihist[255];
-  long int sum;
+void correctBrightness(unsigned char *_inputImgData,
+                       unsigned char *_outputImgData, int imgRows, int imgCols,
+                       int brightness) {
+  int x, y, i;
 
-  for (i = 0; i < 255; i++) {
-    ihist[i] = 0;
-  }
-  sum = 0;
   for (y = 0; y < imgRows; y++) {
+
     for (x = 0; x < imgCols; x++) {
-      j = *(_imgData + x + y * imgCols);
-      ihist[j] = ihist[j] + 1;
-      sum = sum + 1;
+      i = *(_inputImgData + x + y * imgCols) + brightness;
+      if (i > 255)
+        i = 255;
+      if (i < 0)
+        i = 0;
+      *(_outputImgData + x + y * imgCols) = i;
     }
   }
-
-  for (i = 0; i < 255; i++) {
-    hist[i] = ihist[i] / (float)sum;
-  }
-
-  for (int i = 0; i < 255; i++) {
-    fprintf(fptr, "\n%f", hist[i]);
-  }
-  fclose(fptr);
 }
