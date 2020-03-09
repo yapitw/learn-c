@@ -75,8 +75,9 @@ void Convolve(int imgRows, int imgCols, struct Mask* myMask,
           ms  = (signed char)*(myMask->Data + m * myMask->Rows + n);
           idx = i - m;
           jdx = j - n;
-          if (idx >= 0 && jdx >= 0)
+          if (idx >= 0 && jdx >= 0) {
             im = *(input_buf + idx * imgRows + jdx);
+          }
           val += ms * im;
         }
       }
