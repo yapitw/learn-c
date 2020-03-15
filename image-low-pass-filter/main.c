@@ -24,14 +24,14 @@ int main() {
   unsigned char imgBuffer2[CUSTOM_IMG_SIZE];
 
   const char imgName[]    = "cameraman.bmp";
-  const char newImgName[] = "cameraman_hp.bmp";
+  const char newImgName[] = "cameraman_lp.bmp";
 
-  struct Mask hpMask;
-  signed char* tmp;
+  struct Mask lowPassMask;
+  double* tmp;
   int i;
 
-  hpMask.Cols = hpMask.Rows = 3;
-  hpMask.Data               = (unsigned char*)malloc(9);
+  lowPassMask.Data = (double*)malloc(9 * sizeof(double));
+  lowPassMask.Cols = lowPassMask.Rows = 3;
 
   /*
       -1 -1 -1
@@ -39,24 +39,23 @@ int main() {
       -1 -1 -1
    */
 
-  int highPassMsk[] = {
-      -1, -1, -1, //
-      -1, 9,  -1, //
-      -1, -1, -1  //
+  int lowPassMsk[] = {
+      1, 1, 1, //
+      1, 1, 1, //
+      1, 1, 1  //
   };
 
-  // set all mask values to -1
-  tmp = (signed char*)hpMask.Data;
+  tmp = (double*)lowPassMask.Data;
 
   for (i = 0; i < 9; ++i) {
-    *tmp = highPassMsk[i];
+    *tmp = lowPassMsk[i] / 9.0;
     ++tmp;
   }
-  
+
   imageReader(imgName, &imgHeight, &imgWidth, &imgBitDepth, &imgHeader[0],
               &imgColorTable[0], &imgBuffer[0]);
 
-  Convolve(imgHeight, imgWidth, &hpMask, imgBuffer, imgBuffer2);
+  Convolve(imgHeight, imgWidth, &lowPassMask, imgBuffer, imgBuffer2);
   imageWriter(newImgName, imgHeader, imgColorTable, imgBuffer2, imgBitDepth);
   printf("SUCCESS! \n");
 
@@ -67,7 +66,8 @@ void Convolve(int imgRows, int imgCols, struct Mask* myMask,
               unsigned char* input_buf, unsigned char* output_buf) {
 
   long i, j, n, m, idx, jdx;
-  int ms, im, val;
+  double ms, val;
+  int im;
   unsigned char* temp;
 
   for (i = 0; i < imgRows; ++i) {
@@ -75,7 +75,7 @@ void Convolve(int imgRows, int imgCols, struct Mask* myMask,
       val = 0;
       for (m = 0; m < myMask->Rows; ++m) {
         for (n = 0; n < myMask->Cols; ++n) {
-          ms  = (signed char)*(myMask->Data + m * myMask->Rows + n);
+          ms  = *(myMask->Data + m * myMask->Rows + n);
           idx = i - m;
           jdx = j - n;
           if (idx >= 0 && jdx >= 0) {
@@ -84,11 +84,11 @@ void Convolve(int imgRows, int imgCols, struct Mask* myMask,
           val += ms * im;
         }
       }
-      if (val > 255) {
-        val = 255;
+      if (val > 255.0) {
+        val = 255.0;
       }
-      if (val < 0) {
-        val = 0;
+      if (val < 0.0) {
+        val = 0.0;
       }
       temp  = output_buf + i * imgRows + j;
       *temp = (unsigned char)val;
